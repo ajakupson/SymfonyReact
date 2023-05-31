@@ -1,0 +1,19 @@
+.trees {
+    margin: 0 auto;
+}
+
+.trees > div {
+    flex-grow: 1;
+    border: 1px solid #cbbfbf;
+    margin: 10px 5px;
+}
+
+.d-tree-node {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.d-tree-node > div > div > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
