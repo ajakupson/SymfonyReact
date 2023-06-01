@@ -5,6 +5,11 @@
 3. using Symfony CLI run ```symfony server:start``` from command line interface to launch the web server
 4. open browser and type ``` http://localhost:8000/ ```
 
+CRUD API located in ```src\Controller\TreeController```
+Entity and Repository in ```src\Entity and src\Repository``` folders accordingly
+
+app.js and React components in ```assets``` folder
+
 ```
 |   .env
 |   .env.test
