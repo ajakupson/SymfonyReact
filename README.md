@@ -1,4 +1,4 @@
-# Symfony + React + Material UI
+# Symfony + React + Material UI Demo
 
 ![app](readme_img/app.png)
 
