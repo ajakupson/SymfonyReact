@@ -1,5 +1,7 @@
 # Symfony + React + Material UI
 
+![app](readme_img/app.png)
+
 1. import the data from ``` docker\database\nodes_app_tree.sql ```
 2. database connection settings are located in .env file - ```DATABASE_URL="mysql://root:root@127.0.0.1:3306/nodes_app?serverVersion=8&charset=utf8mb4"```
 3. using Symfony CLI run ```symfony server:start``` from command line interface to launch the web server
