@@ -1,21 +1,29 @@
-version: '3'
+version: '3.9'
 
 services:
-###> doctrine/doctrine-bundle ###
-  database:
-    image: postgres:${POSTGRES_VERSION:-15}-alpine
+  db:
+    build:
+      context: ./docker/database
+    container_name: symfony_react_db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-app}
-      # You should definitely change the password in production
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
-      POSTGRES_USER: ${POSTGRES_USER:-app}
+      MYSQL_ROOT_PASSWORD: root
+      DATABASE_URL: 'mysql://root:root@db:3306/nodes_app?serverVersion=8&charset=utf8mb4'
+    ports:
+      - "4306:3306"
     volumes:
-      - database_data:/var/lib/postgresql/data:rw
-      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./docker/db/data:/var/lib/postgresql/data:rw
-###< doctrine/doctrine-bundle ###
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/data:/var/lib/mysql
 
-volumes:
-###> doctrine/doctrine-bundle ###
-  database_data:
-###< doctrine/doctrine-bundle ###
+  symfony_react:
+    build:
+      context: .
+      dockerfile: docker/apache/Dockerfile
+    container_name: symfony_react_app
+    depends_on:
+      - db
+    ports:
+      - "2520:8080"
+    restart: always
+    volumes:
+      - .:/usr/src/app
+    entrypoint: sh /usr/src/app/docker/apache/start_server.sh

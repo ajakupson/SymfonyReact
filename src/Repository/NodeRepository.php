@@ -50,6 +50,52 @@ class NodeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function getByIds($ids) {
+        return $this->createQueryBuilder('n')
+            ->where('n.id in (:ids)')
+            ->setParameter('ids', $ids, ArrayParameterType::INTEGER)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getNodesWithChilds() {
+        $rawSql = 'WITH children AS (SELECT parent_id, GROUP_CONCAT(id) as childs FROM node GROUP BY parent_id),
+                        nodes AS (SELECT * FROM node)
+                   SELECT nodes.id, nodes.id as nid, nodes.parent_id, nodes.name, children.childs 
+                    FROM nodes 
+                   LEFT JOIN children ON nodes.id = children.parent_id';
+
+        $statement = $this->getEntityManager()->getConnection()->prepare($rawSql);
+        return $statement->executeQuery()->fetchAllAssociativeIndexed();
+    }
+
+    public function buildTree() {
+        $raw = $this->getNodesWithChilds();
+        $data = $raw;
+
+        $roots = [];
+        foreach ($data as &$row) {
+            if ($row['parent_id'] == 0) {
+                $roots[$row['nid']] = true;
+            }
+
+            $row['children'] = [];
+            $childs = array_filter(explode(',', $row['childs']));
+            foreach ($childs as $child) {
+                if (isset($data[$child])) {
+                    $row['children'][] =& $data[$child];
+                }
+            }
+        }
+
+        $tree = [];
+        foreach ($roots as $id => $value) {
+            $tree[] = $data[$id];
+        }
+
+        return ['raw' => array_values($raw), 'tree' => $tree];
+    }
+
 //    /**
 //     * @return Node[] Returns an array of Node objects
 //     */

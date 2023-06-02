@@ -30,30 +30,29 @@ class App extends Component {
         });
 
         Emitter.on('get_related_to_node', (node) => {
-            this.getRelatedToNode(node);
+            //this.getRelatedToNode(node);
+            this.getRelatedToNode2(node);
         });
 
         Emitter.on('save_node', (node) => {
             this.saveNode(node);
         });
 
-        this.readTreeData();
+        //this.readTreeData();
+        this.readTreeData2();
     }
 
     createTreeNode(data) {
         let requestData = {
-            parent_id: data.parent.id,
+            parent_id: data.parent.nid,
             name: data.name
         }
 
         axios.post('/api/tree/add', requestData)
             .then(response => {
-                let raw = this.state.raw;
-                raw.push(response.data.node);
-                let tree1 = this.buildTree(raw);
-
+                data.parent.children.push(response.data.node);
+                let tree1 = this.state.tree1;
                 this.setState({
-                    raw: raw,
                     tree1: tree1
                 });
             })
@@ -76,17 +75,11 @@ class App extends Component {
             });
     }
 
-    deleteTreeNode(data) {
-        let ids = [data.node.id];
-        if (data.node.children) {
-            ids = this.getIdsForDeletion(data.node.children, ids);
-        }
-
-        axios.post('/api/tree/delete', {ids: ids})
+    readTreeData2() {
+        axios.get('/api/tree/read2')
             .then(response => {
-                let raw = this.state.raw.filter(r => !ids.includes(r.id));
-                let tree1 = this.buildTree(raw);
-
+                let raw = response.data.raw;
+                let tree1 = response.data.tree;
                 this.setState({
                     raw: raw,
                     tree1: tree1
@@ -95,17 +88,46 @@ class App extends Component {
             .catch(error => {
                 console.log(error);
             });
+    }
+
+    deleteTreeNode(data) {
+        let ids = [data.node.nid];
+        if (data.node.children) {
+            ids = this.getIds(data.node.children, ids);
+        }
+
+        axios.post('/api/tree/delete', {ids: ids})
+            .then(response => {
+                let tree1 = this.state.tree1;
+                this.removeNode(tree1, data.node);
+                this.setState({
+                    tree1: tree1
+                });
+            })
+            .catch(error => {
+                console.log(error);
+            });
 
     }
-    getIdsForDeletion(data, ids) {
+    getIds(data, ids) {
         data.forEach(r => {
-            ids.push(r.id);
+            ids.push(r.nid);
             if (r.children) {
-                ids = this.getIdsForDeletion(r.children, ids);
+                ids = this.getIds(r.children, ids);
             }
         });
 
         return ids;
+    }
+
+    removeNode(tree, node) {
+        tree.every(r => {
+           if (r.nid == node.parent_id) {
+               r.children = r.children.filter(c => c.nid != node.nid);
+               return false;
+            }
+            this.removeNode(r.children, node);
+        });
     }
 
     getRelatedToNode(node) {
@@ -121,6 +143,48 @@ class App extends Component {
             .catch(error => {
                 console.log(error);
             });
+    }
+
+    getRelatedToNode2(node) {
+        let raw = this.state.raw;
+        let childIds = this.getIds(node.children, []);
+        let parentSiblingIds = Array.from(this.getSiblingWithParentIds(raw, node.parent_id, node, new Set()));
+
+        let allIds = [...parentSiblingIds, ...childIds];
+
+        axios.post('/api/tree/related', { node: node, ids: allIds })
+            .then(response => {
+                let nodes = response.data.nodes;
+                let data = _.orderBy(nodes, ['id'], ['asc']);
+                let tree2 = this.buildTree(data);
+                this.setState({
+                    tree2: tree2
+                });
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+
+    getSiblingWithParentIds(data, parentId, node, ids) {
+        data.some(r => {
+            if (r.parent_id == node.parent_id) {
+                ids.add(r.nid);
+            }
+
+            if (r.nid == parentId) {
+               ids.add(r.nid);
+               parentId = r.parent_id;
+
+               if (parentId > 0) {
+                   ids = this.getSiblingWithParentIds(data, parentId, node, ids);
+               }
+
+               return false;
+           }
+        });
+
+        return ids;
     }
 
     saveNode(node) {

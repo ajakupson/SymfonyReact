@@ -31,6 +31,14 @@ class TreeController extends AbstractController
             $out[] = $node->toArray();
         }
 
+        $out = $this->nodeRepository->buildTree();
+        return $this->json($out);
+    }
+
+    #[Route('/read2', name: 'api_tree_read2')]
+    public function getTreeData2(): Response
+    {
+        $out = $this->nodeRepository->buildTree();
         return $this->json($out);
     }
 
@@ -80,8 +88,9 @@ class TreeController extends AbstractController
     {
         $content = json_decode($request->getContent());
         $node = $content->node;
+        $ids = $content->ids;
 
-        $entities = $this->nodeRepository->findAll();
+        $entities = $this->nodeRepository->getByIds($ids);
         $nodes = [];
         foreach ($entities as $key => $entity) {
             $nodes[] = $entity->toArray();
@@ -92,7 +101,7 @@ class TreeController extends AbstractController
             'nodes' => []
         ];
         foreach ($nodes as $nd) {
-            if ($node->id == $nd['parent_id'] || in_array($nd['parent_id'], $children['ids'])) {
+            if ($node->nid == $nd['parent_id'] || in_array($nd['parent_id'], $children['ids'])) {
                 $children['ids'][] = $nd['id'];
                 $nd['relation'] = 'child';
                 $children['nodes'][] = $nd;
@@ -109,7 +118,7 @@ class TreeController extends AbstractController
         ];
         array_multisort(array_column($nodes, 'id'), SORT_DESC, $nodes);
         foreach($nodes as $nd) {
-            if ($nd['parent_id'] == $node->parent_id && $node->id != $nd['id']) {
+            if ($nd['parent_id'] == $node->parent_id && $node->nid != $nd['id']) {
                 $siblings['ids'][] = $nd['id'];
                 $nd['relation'] = 'sibling';
                 $siblings['nodes'][] = $nd;
@@ -123,7 +132,7 @@ class TreeController extends AbstractController
         }
 
         $selected = [
-            'id' => $node->id,
+            'id' => $node->nid,
             'parent_id' => $node->parent_id,
             'name' => $node->name,
             'relation' => null,
@@ -142,7 +151,7 @@ class TreeController extends AbstractController
         $node = $content->node;
 
         try {
-            $entity = $this->entityManager->getReference('App\Entity\Node', $node->id);
+            $entity = $this->entityManager->getReference('App\Entity\Node', $node->nid);
             $entity->setName($node->name);
             $this->entityManager->persist($entity);
             $this->entityManager->flush();

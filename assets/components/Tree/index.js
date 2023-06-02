@@ -11,6 +11,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CallMissedOutgoingIcon from '@mui/icons-material/CallMissedOutgoing';
 
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -150,7 +151,7 @@ const TreeNode = ({ node = [], main = false, counter = 0 }) => {
 
     return (
         <div className="d-tree-node border-0" key={node.id} style={{paddingLeft: counter * 10 + 'px'}}>
-            <ListItemButton onClick={emitRelatedEvent}>
+            <ListItemButton>
                 {
                     !edit ?
                         <ListItemText primary={node.name} secondary={node.relation} className="mr-2"/> :
@@ -174,6 +175,14 @@ const TreeNode = ({ node = [], main = false, counter = 0 }) => {
                     main &&
                     <IconButton onClick={showDeleteNodeDialog}>
                         <DeleteIcon/>
+                    </IconButton>
+
+                }
+
+                {
+                    main &&
+                    <IconButton onClick={emitRelatedEvent}>
+                        <CallMissedOutgoingIcon/>
                     </IconButton>
                 }
 
